@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<WorkFlow version="17.0.602.4">
+  <Property>
+    <Name>AFPDefaultCP</Name>
+    <Value>ibm-500</Value>
+  </Property>
+  <Property>
+    <Name>Guid</Name>
+    <Value>310F67297236214F961ABA79A7E7460E</Value>
+  </Property>
+  <Layout>
+    <Id>Layout1</Id>
+    <Name>DocumentLayout</Name>
+    <Layout>
+      <Flow>
+        <Id>40</Id>
+        <Name>mainflow</Name>
+        <Type>Simple</Type>
+        <FlowContent Width="0.20000000000000001">
+          <P Id="Def.ParaStyle">
+            <T Id="Def.TextStyleDelta">
+              <O Id="42"/>
+            </T>
+          </P>
+        </FlowContent>
+        <SectionFlow>true</SectionFlow>
+      </Flow>
+      <Flow>
+        <Id>42</Id>
+        <Type>Simple</Type>
+        <FlowContent Width="0.20000000000000001">
+          <P Id="Def.ParaStyle">
+            <T Id="Def.TextStyleDelta">sdcdvrgregre</T>
+          </P>
+        </FlowContent>
+      </Flow>
+      <Page>
+        <Id>33</Id>
+        <Name>Page 1</Name>
+        <Width>0.20999999999999999</Width>
+        <Height>0.29699999999999999</Height>
+        <LogicalPageName>Main</LogicalPageName>
+      </Page>
+      <FlowArea>
+        <Id>36</Id>
+        <Name>Main_FA</Name>
+        <Pos X="7.1437500000000008e-003" Y="0.11403541666666668"/>
+        <Size X="0.19552708333333335" Y="0.11879791666666668"/>
+        <FlowId>40</FlowId>
+      </FlowArea>
+    </Layout>
+  </Layout>
+</WorkFlow>
