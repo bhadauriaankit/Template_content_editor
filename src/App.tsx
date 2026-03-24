@@ -102,6 +102,43 @@ const App: React.FC = () => {
     setSelectedIndex(index);
     showStatus(`Selected: ${flows[index].name}`, 'info');
   }, [flows]);
+//   // Update the handleSaveFlow function to properly handle all data
+// const handleSaveFlow = useCallback((
+//   newText: string, 
+//   images?: ImageData[], 
+//   textStyle?: TextStyle, 
+//   paragraphStyle?: ParagraphStyle
+// ) => {
+//   if (selectedIndex === null || !xmlDoc) return;
+  
+//   const flow = flows[selectedIndex];
+  
+//   // Update the content in XML with styles and images
+//   const success = updateFlowContent(
+//     flow.node, 
+//     newText, 
+//     xmlDoc, 
+//     textStyle, 
+//     paragraphStyle,
+//     images
+//   );
+  
+//   if (success) {
+//     // Update stored data
+//     const updatedFlows = [...flows];
+//     updatedFlows[selectedIndex] = {
+//       ...flow,
+//       textContent: newText,
+//       images: images || flow.images,
+//       textStyle: textStyle || flow.textStyle,
+//       paragraphStyle: paragraphStyle || flow.paragraphStyle
+//     };
+//     setFlows(updatedFlows);
+//     showStatus(`✅ Changes saved to "${flow.name}" with styles and ${images?.length || 0} image(s)`, 'success');
+//   } else {
+//     showStatus('Error saving changes', 'error');
+//   }
+// }, [selectedIndex, flows, xmlDoc]);
 
   const handleSaveFlow = useCallback((
     newText: string, 
