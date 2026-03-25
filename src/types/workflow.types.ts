@@ -1,7 +1,7 @@
 export interface ImageData {
   id: string;
   name: string;
-  data: string; // base64 data
+  data: string; // This stores the file path for Inspire XML
   mimeType: string;
   width?: number;
   height?: number;
@@ -34,8 +34,10 @@ export interface InteractiveFlow {
   flowContent: Element | null;
   textContent: string;
   images?: ImageData[];
-  textStyle?: TextStyle;
-  paragraphStyle?: ParagraphStyle;
+  textStyleId?: string;  // ID reference to TextStyle from XML
+  paragraphStyleId?: string;  // ID reference to ParaStyle from XML
+  textStyle?: TextStyle;  // For backward compatibility
+  paragraphStyle?: ParagraphStyle;  // For backward compatibility
 }
 
 export interface WorkflowData {

@@ -4,23 +4,24 @@ import UploadArea from './components/UploadArea';
 import FlowsList from './components/FlowsList';
 import EnhancedEditorPanel from './components/EnhancedEditorPanel';
 import StatusMessage from './components/StatusMessage';
-import { InteractiveFlow, ImageData, TextStyle, ParagraphStyle } from './types/workflow.types';
-import { detectInteractiveFlows, updateFlowContent, generateXmlString } from './utils/xmlParser';
-
-// Styled Components
+import { InteractiveFlow, ImageData } from './types/workflow.types';
+import { 
+  detectInteractiveFlows, 
+  updateFlowContent, 
+  generateXmlString,
+  extractStyleDefinitions
+} from './utils/xmlParser';
 const AppContainer = styled.div`
   max-width: 1400px;
   margin: 0 auto;
   padding: 20px;
 `;
-
 const Card = styled.div`
   background: white;
   border-radius: 16px;
   padding: 30px;
   box-shadow: 0 20px 40px rgba(0,0,0,0.1);
 `;
-
 const Header = styled.div`
   text-align: center;
   margin-bottom: 30px;
@@ -52,10 +53,12 @@ const MainContent = styled.div<{ $visible: boolean }>`
 
 const ButtonGroup = styled.div`
   margin-top: 20px;
+  display: flex;
+  gap: 10px;
 `;
 
 const DownloadButton = styled.button`
-  width: 100%;
+  flex: 1;
   padding: 12px 24px;
   border: none;
   border-radius: 8px;
@@ -72,12 +75,50 @@ const DownloadButton = styled.button`
   }
 `;
 
+const PreviewButton = styled.button`
+  flex: 1;
+  padding: 12px 24px;
+  border: none;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 14px;
+  background: #667eea;
+  color: white;
+
+  &:hover {
+    background: #5a67d8;
+    transform: translateY(-2px);
+  }
+`;
+
+const PreviewArea = styled.pre`
+  margin-top: 20px;
+  padding: 15px;
+  background: #1e1e1e;
+  color: #d4d4d4;
+  border-radius: 8px;
+  overflow-x: auto;
+  font-size: 12px;
+  font-family: monospace;
+  max-height: 400px;
+  overflow-y: auto;
+  display: none;
+
+  &.show {
+    display: block;
+  }
+`;
+
 const App: React.FC = () => {
   const [xmlDoc, setXmlDoc] = useState<Document | null>(null);
   const [flows, setFlows] = useState<InteractiveFlow[]>([]);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [fileName, setFileName] = useState<string | null>(null);
   const [status, setStatus] = useState<{ message: string; type: 'info' | 'success' | 'error' } | null>(null);
+  const [showPreview, setShowPreview] = useState<boolean>(false);
+  const [previewXml, setPreviewXml] = useState<string>('');
 
   const showStatus = (message: string, type: 'info' | 'success' | 'error') => {
     setStatus({ message, type });
@@ -102,56 +143,29 @@ const App: React.FC = () => {
     setSelectedIndex(index);
     showStatus(`Selected: ${flows[index].name}`, 'info');
   }, [flows]);
-//   // Update the handleSaveFlow function to properly handle all data
-// const handleSaveFlow = useCallback((
-//   newText: string, 
-//   images?: ImageData[], 
-//   textStyle?: TextStyle, 
-//   paragraphStyle?: ParagraphStyle
-// ) => {
-//   if (selectedIndex === null || !xmlDoc) return;
-  
-//   const flow = flows[selectedIndex];
-  
-//   // Update the content in XML with styles and images
-//   const success = updateFlowContent(
-//     flow.node, 
-//     newText, 
-//     xmlDoc, 
-//     textStyle, 
-//     paragraphStyle,
-//     images
-//   );
-  
-//   if (success) {
-//     // Update stored data
-//     const updatedFlows = [...flows];
-//     updatedFlows[selectedIndex] = {
-//       ...flow,
-//       textContent: newText,
-//       images: images || flow.images,
-//       textStyle: textStyle || flow.textStyle,
-//       paragraphStyle: paragraphStyle || flow.paragraphStyle
-//     };
-//     setFlows(updatedFlows);
-//     showStatus(`✅ Changes saved to "${flow.name}" with styles and ${images?.length || 0} image(s)`, 'success');
-//   } else {
-//     showStatus('Error saving changes', 'error');
-//   }
-// }, [selectedIndex, flows, xmlDoc]);
 
   const handleSaveFlow = useCallback((
     newText: string, 
     images?: ImageData[], 
-    textStyle?: TextStyle, 
-    paragraphStyle?: ParagraphStyle
+    textStyleId?: string, 
+    paragraphStyleId?: string
   ) => {
     if (selectedIndex === null || !xmlDoc) return;
     
     const flow = flows[selectedIndex];
     
-    // Update the text content in XML
-    const success = updateFlowContent(flow.node, newText, xmlDoc);
+    // Extract image IDs from the images array
+    const imageIds = images?.map(img => img.id) || [];
+    
+    // Update the content in XML with styles and images
+    const success = updateFlowContent(
+      flow.node, 
+      newText, 
+      xmlDoc,
+      textStyleId,
+      paragraphStyleId,
+      imageIds
+    );
     
     if (success) {
       // Update stored data
@@ -160,15 +174,34 @@ const App: React.FC = () => {
         ...flow,
         textContent: newText,
         images: images || flow.images,
-        textStyle: textStyle || flow.textStyle,
-        paragraphStyle: paragraphStyle || flow.paragraphStyle
+        textStyleId: textStyleId || (flow as any).textStyleId,
+        paragraphStyleId: paragraphStyleId || (flow as any).paragraphStyleId
       };
       setFlows(updatedFlows);
-      showStatus(`✅ Changes saved to "${flow.name}"`, 'success');
+      
+      showStatus(`✅ Changes saved to "${flow.name}" with styles`, 'success');
     } else {
       showStatus('Error saving changes', 'error');
     }
   }, [selectedIndex, flows, xmlDoc]);
+
+  const handlePreview = useCallback(() => {
+    if (!xmlDoc) {
+      showStatus('No XML loaded', 'error');
+      return;
+    }
+    
+    try {
+      const serializer = new XMLSerializer();
+      const previewStr = serializer.serializeToString(xmlDoc);
+      setPreviewXml(previewStr);
+      setShowPreview(true);
+      showStatus('✅ Preview generated', 'success');
+    } catch (error) {
+      console.error('Preview error:', error);
+      showStatus('Error generating preview', 'error');
+    }
+  }, [xmlDoc]);
 
   const handleDownload = useCallback(() => {
     if (!xmlDoc) {
@@ -182,7 +215,7 @@ const App: React.FC = () => {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = 'updated-workflow.xml';
+      a.download = fileName ? `modified_${fileName}` : 'updated-workflow.xml';
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -193,9 +226,21 @@ const App: React.FC = () => {
       console.error('Download error:', error);
       showStatus('Error downloading XML', 'error');
     }
-  }, [xmlDoc]);
+  }, [xmlDoc, fileName]);
 
   const selectedFlow = selectedIndex !== null ? flows[selectedIndex] : null;
+  
+  // Extract style definitions for dropdowns
+  let paragraphStyles: Array<{ id: string; name: string }> = [];
+  let textStyles: Array<{ id: string; name: string }> = [];
+  
+  if (xmlDoc) {
+    const serializer = new XMLSerializer();
+    const xmlString = serializer.serializeToString(xmlDoc);
+    const styles = extractStyleDefinitions(xmlString);
+    paragraphStyles = styles.paragraphStyles;
+    textStyles = styles.textStyles;
+  }
 
   return (
     <AppContainer>
@@ -216,17 +261,24 @@ const App: React.FC = () => {
           
           <div>
             <EnhancedEditorPanel 
-              flow={selectedFlow} 
-              onSave={handleSaveFlow} 
+              flow={selectedFlow}
+              paragraphStyles={paragraphStyles}
+              textStyles={textStyles}
+              onSave={handleSaveFlow}
             />
             
             {selectedFlow && (
               <ButtonGroup>
+                <PreviewButton onClick={handlePreview}>👁️ Preview XML</PreviewButton>
                 <DownloadButton onClick={handleDownload}>⬇️ Download XML</DownloadButton>
               </ButtonGroup>
             )}
           </div>
         </MainContent>
+
+        <PreviewArea className={showPreview ? 'show' : ''}>
+          {previewXml}
+        </PreviewArea>
 
         {status && (
           <StatusMessage
